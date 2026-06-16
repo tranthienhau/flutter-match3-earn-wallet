@@ -1,77 +1,77 @@
-# Level-to-Earn - Memory Match Shape Game with Reward Wallet
+# ShapeCash - Level-to-Earn Memory Match (Flutter + Riverpod)
 
-A Flutter + Riverpod proof of concept for a "Level-to-Earn" casual game. Players
-pay a $1/month subscription to play a clean, flat-vector memory match game
-(Circles, Squares, Stars and more), then earn cash by watching rewarded ads and
-completing offerwall tasks. Incoming revenue is split 2/3 to the user and 1/3 to
-the platform admin, held in a Net-30 payout queue, and disbursed to users in
-Nigeria via OPay once a $10 minimum threshold is met. Anti-fraud is modelled with
-Play Integrity / Apple DeviceCheck signals and a VPN/proxy block. Everything runs
-on a simulator with mock data - ads, IAP, offerwall S2S postbacks, integrity
-checks and OPay payouts are all simulated behind taps.
+A cross-platform **Level-to-Earn** casual game POC: a clean geometric **Memory Match** game wrapped in a real reward economy - virtual wallet with a **2/3 user / 1/3 platform** revenue split, a **Net-30 payout queue**, a **$10 minimum cash-out threshold**, **OPay** disbursement for Nigeria, and a **Play Integrity / DeviceCheck** anti-fraud gate. Everything runs on mock data on a bare simulator (no ad SDK, billing, or backend keys needed).
 
-## Screens
+## Screenshots
 
-| Memory Match | Win + Level Reward | Wallet (2/3 - 1/3 split) |
-| --- | --- | --- |
-| ![Game](screenshots/02-game.png) | ![Win](screenshots/03-win.png) | ![Wallet](screenshots/04-wallet.png) |
+| Home (subscription gateway) | Memory Match (energy + rewarded hint) | Board cleared (level reward) |
+|---|---|---|
+| ![Home](screenshots/01-home.png) | ![Game](screenshots/02-game.png) | ![Win](screenshots/03-win.png) |
 
-| OPay Payout (Net-30) | Earn / Offerwall | Device Integrity |
-| --- | --- | --- |
-| ![Payout](screenshots/05-payout.png) | ![Earn](screenshots/06-earn.png) | ![Integrity](screenshots/07-trust.png) |
+| Wallet (2/3-1/3 split, Net-30) | OPay cash-out (>= $10) | Earn (AdMob + offerwall S2S) |
+|---|---|---|
+| ![Wallet](screenshots/04-wallet.png) | ![Payout](screenshots/05-payout.png) | ![Earn](screenshots/06-earn.png) |
 
-| Home / Subscription paywall | Fraud blocked |
-| --- | --- |
-| ![Home](screenshots/01-home.png) | ![Blocked](screenshots/08-trust-blocked.png) |
-
-### Demo
+| Device trusted | Device blocked (fraud) |
+|---|---|
+| ![Trust](screenshots/07-trust.png) | ![Blocked](screenshots/08-trust-blocked.png) |
 
 ![Demo](screenshots/demo.gif)
 
-### Data & screen flow
-
-![Flow](screenshots/flow-diagram.png)
-
 ## What it shows
 
-- **Core gameplay**: a high-performance memory match grid of flat geometric
-  shapes drawn with a pure `CustomPainter` (no image assets). An "Energy"
-  mechanic gates rounds, and a rewarded-video "Hint" power-up briefly highlights
-  a matching pair after a mock rewarded ad.
-- **Monetization**: a mock $1/month recurring subscription (Google Play Billing /
-  Apple IAP) gating play, plus AdMob Rewarded and Interstitial ads, and an
-  offerwall listing BitLabs / Adjoe / Torox tasks. Offerwall tasks only credit
-  after a simulated Server-to-Server (S2S) postback confirms them - a tapped
-  "Complete" never pays on its own.
-- **Wallet architecture**: a virtual wallet ledger that splits every unit of
-  ad/task revenue 2/3 to the user and 1/3 to the platform admin on arrival, with
-  a $10 minimum payout threshold and a Net-30 queue that holds the user's share
-  for a 30-day clearance cycle before it becomes cashable.
-- **Payout automation**: an OPay Business/Payout API bulk-disbursement screen
-  (Nigeria) that is gated behind the threshold and produces a payout reference.
-- **Anti-fraud**: a Device Integrity panel modelling Play Integrity / Apple
-  DeviceCheck verdicts, emulator/multi-account detection, click-bot heuristics
-  and a server-side VPN/proxy block, with a "simulate fraud" toggle that freezes
-  earning and holds payouts.
+- **Core casual gameplay** - a high-performance Memory Match game built from flat-vector geometric shapes (circle, square, triangle, star, hexagon, diamond) drawn with `CustomPainter` (zero image assets). An **Energy** mechanic gates rounds and a rewarded-video **Hint** power-up briefly reveals a matching pair.
+- **Monetization stack** - a $1/month **subscription gateway** (Google Play Billing / Apple IAP), **AdMob** rewarded + interstitial placements, and an **offerwall** (BitLabs / Adjoe / Torox). Offer rewards only credit after a simulated **Server-to-Server (S2S) postback** confirms them - a tapped "Complete" never pays alone.
+- **Wallet & ledger** - incoming gross revenue is split on arrival **2/3 to the user, 1/3 to the platform admin**. The user share enters a **Net-30 queue** and matures into the available balance after a 30-day clearance window.
+- **Payout automation** - once the available balance clears the **$10 threshold**, a bulk disbursement is queued through the **OPay Business/Payout API** (mocked) with a generated reference.
+- **Anti-fraud suite** - a device-trust panel modelling **Play Integrity API / Apple DeviceCheck**, emulator detection, **VPN/proxy** blocking, multi-account farming, and click-bot heuristics. A "Simulate fraud" toggle shows earning and payout freezing when attestation fails.
+
+## Revenue & payout flow
+
+```mermaid
+flowchart TD
+  G[Gameplay win: +XP, level reward] --> S
+  A[AdMob: rewarded / interstitial] --> S
+  O[Offerwall: S2S postback verified] --> S
+  SUB[Subscription $1/mo - Play Billing / IAP] -. unlocks play .-> G
+  S[Wallet split engine - every $1 gross] -->|2/3| N[Net-30 queue - user share]
+  S -->|1/3| P[Platform admin wallet]
+  N -->|cleared after 30d| AV[Available balance]
+  AV -->|>= $10 threshold| PAY[OPay bulk payout - Nigeria]
+  F[Anti-fraud gate: Play Integrity / VPN / emulator] -. freezes .-> S
+  F -. holds .-> PAY
+```
+
+![Flow diagram](screenshots/flow-diagram.png)
 
 ## Architecture
 
-- **Flutter + Riverpod** with a feature-per-file `lib/src` layout.
-- State is held in five `Notifier`s, each exposed via a `NotifierProvider`:
-  - `accountProvider` - profile, XP/level, Energy, subscription status.
-  - `gameProvider` - deterministic (seeded) memory-match board, hint logic.
-  - `walletProvider` - ledger, 2/3-1/3 split, Net-30 clearance, OPay payout.
-  - `earnProvider` - AdMob mocks + offerwall tasks with delayed S2S postbacks.
-  - `integrityProvider` - device-trust signals and the fraud toggle.
-- Earning flows write into the wallet ledger through `walletProvider`, which is
-  the single source of truth for balances, the revenue split and payout gating.
-- All external systems (ads, IAP, offerwall networks, OPay, Play Integrity) are
-  mock layers, so the whole app is fully demoable on a simulator with no real
-  SDKs, backend or hardware.
+Feature-first Flutter with **Riverpod** `Notifier` providers, one per bounded concern - state is decoupled from UI and the cross-feature economy flows through a single wallet provider.
+
+```
+lib/
+  main.dart                       ProviderScope root
+  src/
+    app.dart  shell.dart  theme.dart
+    state/
+      account_state.dart          XP / level / energy / subscription
+      game_state.dart             Memory Match board, matching, hint, win reward
+      wallet_state.dart           2/3-1/3 split, Net-30 queue, $10 threshold, OPay payout
+      earn_state.dart             AdMob + offerwall S2S postback verification
+      integrity_state.dart        Play Integrity / DeviceCheck anti-fraud signals
+    screens/                      home / game / wallet / earn / integrity
+    widgets/                      ShapePainter (flat-vector shapes), shared UI
+```
+
+- **Single source of economic truth**: gameplay, ads, and offers all call `walletProvider.creditRevenue(source, gross)`, which applies the 2/3-1/3 split and Net-30 timing in one place.
+- **Untrusted client**: offer completion is provisional until the simulated S2S postback verifies it; fraud attestation gates the whole earn-to-payout path.
+- **Deterministic board**: the shuffle is seeded so the demo is reproducible.
 
 ## Run
 
 ```bash
 flutter pub get
-flutter run
+flutter run        # iOS Simulator or Android emulator - no keys or backend
 ```
+
+Stack: Flutter 3.41 / Dart 3.11, `flutter_riverpod`. Mobile only (iOS + Android).
