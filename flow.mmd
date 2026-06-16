@@ -1,0 +1,27 @@
+flowchart TD
+    Sub["Subscription paywall<br/>$1/month - Google Play Billing / Apple IAP (mock)"]
+    Integ["Device Integrity gate<br/>Play Integrity / Apple DeviceCheck + VPN block (mock)"]
+    Game["Memory Match game<br/>flat geometric shapes, Energy, rewarded Hint"]
+
+    subgraph Earn["Earn revenue (mock)"]
+      Ad["AdMob Rewarded / Interstitial"]
+      Offer["Offerwall: BitLabs / Adjoe / Torox<br/>S2S postback verifies before credit"]
+    end
+
+    Split["Wallet split on arrival<br/>2/3 to user - 1/3 to platform admin"]
+    Net30["Net-30 payout queue<br/>user share held 30-day clearance"]
+    Threshold{"Available >= $10<br/>minimum threshold?"}
+    OPay["OPay Business / Payout API<br/>bulk disbursement - Nigeria (mock)"]
+    Hold["Hold balance<br/>keep earning"]
+
+    Sub --> Integ
+    Integ -->|trusted| Game
+    Integ -->|blocked| Hold
+    Game --> Ad
+    Game --> Offer
+    Ad --> Split
+    Offer --> Split
+    Split --> Net30
+    Net30 -->|cleared| Threshold
+    Threshold -->|yes| OPay
+    Threshold -->|no| Hold
